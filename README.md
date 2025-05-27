@@ -1,7 +1,6 @@
-# Classificação Binaria da Toxicidade de Pequenas Moléculas em Abelhas Melíferas
+# Classificação de Toxicidade para Abelhas
 
 ## Dataset
-
 
 ```
 @article{adamczyk2025apistox,
