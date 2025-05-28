@@ -24,5 +24,5 @@ print(df.isnull(), "\n")
 print("Verfica se existe duplicatas", "\n")
 print(df.duplicated(), "\n")
 
-print("Proporção classes binárias:", df['label'].value_counts(normalize=True))
+print("Proporção classes binárias:", df['label'].value_counts())
 
