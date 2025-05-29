@@ -9,8 +9,6 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, matthews_corrcoef,
                              confusion_matrix, classification_report)
 from imblearn.over_sampling import SMOTE
-from rdkit import Chem
-from rdkit.Chem import AllChem, DataStructs
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -19,25 +17,10 @@ from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
 
-df = pd.read_csv('dataset_final.csv')
+df = pd.read_csv('dataset_features_importantes.csv')
 
-
-def smiles_to_fingerprint(smiles, radius=2, n_bits=1024):
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
-        return None
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=n_bits)
-    arr = np.zeros((n_bits,), dtype=int)
-    DataStructs.ConvertToNumpyArray(fp, arr)
-    return arr
-
-X = np.array([smiles_to_fingerprint(sm) for sm in df['SMILES']])
+X = df.drop('label', axis=1).values
 y = df['label'].values
-
-
-valid_indices = [i for i, x in enumerate(X) if x is not None]
-X = np.array([X[i] for i in valid_indices])
-y = y[valid_indices]
 
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -131,6 +114,8 @@ for name, model in models.items():
     search.fit(X_train_bal, y_train_bal)
     best_model = search.best_estimator_
 
+    evaluate_model(best_model, X_test, y_test, name)
+
     y_pred = best_model.predict(X_test)
     y_proba = best_model.predict_proba(X_test)[:, 1]
 
@@ -150,9 +135,6 @@ for name, model in models.items():
         'AUC-ROC': auc,
         'MCC': mcc
     })
-
-    evaluate_model(best_model, X_test, y_test, name)
-
 
 df_results = pd.DataFrame(results)
 print("\n=== Comparação resumida dos modelos ===")

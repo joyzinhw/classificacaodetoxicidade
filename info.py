@@ -18,7 +18,7 @@ print(df.describe(), "\n")
 
 
 # verificar se precisa limpar os dados
-print("Verfica se existe valores nulos", "\n")
+print("Verfica se existe valores nulos", "\n")    
 print(df.isnull(), "\n")
 
 print("Verfica se existe duplicatas", "\n")
