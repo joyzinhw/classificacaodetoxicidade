@@ -16,28 +16,31 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
+# --- Carrega o dataset reduzido com 3 features + label
+df = pd.read_csv('importances.csv')
 
-df = pd.read_csv('dataset_features_importantes.csv')
-
-X = df.drop('label', axis=1).values
+# Separa features e alvo
+X = df.drop(columns=['label']).values
 y = df['label'].values
 
-
+# Divide treino/teste
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y)
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
+# Normaliza features
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-
+# Aplica SMOTE para balancear classes no treino
 sm = SMOTE(random_state=42)
 X_train_bal, y_train_bal = sm.fit_resample(X_train, y_train)
 
 print("Antes do SMOTE:", np.bincount(y_train))
 print("Depois do SMOTE:", np.bincount(y_train_bal))
 
-
+# Define modelos e seus hiperparâmetros para RandomizedSearchCV
 models = {
     'Random Forest': RandomForestClassifier(random_state=42),
     'SVM': SVC(probability=True, random_state=42),
@@ -80,7 +83,6 @@ param_grid = {
     }
 }
 
-
 def evaluate_model(model, X_test, y_test, name):
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1]
@@ -104,7 +106,6 @@ def evaluate_model(model, X_test, y_test, name):
     plt.xlabel('Predito')
     plt.show()
 
-
 results = []
 
 for name, model in models.items():
@@ -113,8 +114,6 @@ for name, model in models.items():
                                 n_iter=5, cv=3, scoring='f1', random_state=42, n_jobs=-1)
     search.fit(X_train_bal, y_train_bal)
     best_model = search.best_estimator_
-
-    evaluate_model(best_model, X_test, y_test, name)
 
     y_pred = best_model.predict(X_test)
     y_proba = best_model.predict_proba(X_test)[:, 1]
@@ -135,6 +134,8 @@ for name, model in models.items():
         'AUC-ROC': auc,
         'MCC': mcc
     })
+
+    evaluate_model(best_model, X_test, y_test, name)
 
 df_results = pd.DataFrame(results)
 print("\n=== Comparação resumida dos modelos ===")

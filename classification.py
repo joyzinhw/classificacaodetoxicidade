@@ -19,7 +19,7 @@ from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
 
-df = pd.read_csv('dataset_final.csv')
+df = pd.read_csv('dataset.csv')
 
 
 def smiles_to_fingerprint(smiles, radius=2, n_bits=1024):
