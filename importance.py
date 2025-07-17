@@ -35,9 +35,12 @@ important_feature_names = X.columns[selector.get_support()]
 print(f"\nFeatures importantes selecionadas ({len(important_feature_names)}):")
 print(important_feature_names.tolist())
 
-# Novo DataFrame só com features importantes + label
-df_important = pd.DataFrame(X_important, columns=important_feature_names)
-df_important['label'] = y.values
+# Seleciona as 3 features mais importantes
+top3_features = feat_importance_df['feature'].head(2).tolist()
 
-# Salva novo CSV
-df_important.to_csv('importances.csv', index=False)
+# Cria novo DataFrame com as 3 features + label
+df_top3 = df[top3_features].copy()
+df_top3['label'] = y.values
+
+# Salva no CSV
+df_top3.to_csv('importances.csv', index=False)

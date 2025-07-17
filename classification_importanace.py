@@ -1,10 +1,8 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score, matthews_corrcoef,
                              confusion_matrix, classification_report)
@@ -12,111 +10,33 @@ from imblearn.over_sampling import SMOTE
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
-from catboost import CatBoostClassifier
-
-# --- Carrega o dataset reduzido com 3 features + label
 df = pd.read_csv('importances.csv')
-
-# Separa features e alvo
-X = df.drop(columns=['label']).values
+features = df.drop(columns=['label']).columns.tolist()
 y = df['label'].values
-
-# Divide treino/teste
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-
-# Normaliza features
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-# Aplica SMOTE para balancear classes no treino
-sm = SMOTE(random_state=42)
-X_train_bal, y_train_bal = sm.fit_resample(X_train, y_train)
-
-print("Antes do SMOTE:", np.bincount(y_train))
-print("Depois do SMOTE:", np.bincount(y_train_bal))
-
-# Define modelos e seus hiperparâmetros para RandomizedSearchCV
-models = {
-    'Random Forest': RandomForestClassifier(random_state=42),
-    'SVM': SVC(probability=True, random_state=42),
-    'MLP': MLPClassifier(max_iter=500, random_state=42),
-    'XGBoost': XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss'),
-    'LightGBM': LGBMClassifier(random_state=42),
-    'CatBoost': CatBoostClassifier(verbose=0, random_state=42)
-}
-
-param_grid = {
-    'Random Forest': {
-        'n_estimators': [100, 200],
-        'max_depth': [None, 10, 20],
-        'min_samples_split': [2, 5]
-    },
-    'SVM': {
-        'C': [0.1, 1, 10],
-        'gamma': ['scale', 'auto'],
-        'kernel': ['rbf', 'poly']
-    },
-    'MLP': {
-        'hidden_layer_sizes': [(100,), (100,50)],
-        'alpha': [0.0001, 0.001],
-        'activation': ['relu', 'tanh']
-    },
-    'XGBoost': {
-        'n_estimators': [100, 200],
-        'max_depth': [3, 6],
-        'learning_rate': [0.01, 0.1]
-    },
-    'LightGBM': {
-        'n_estimators': [100, 200],
-        'max_depth': [-1, 10],
-        'learning_rate': [0.01, 0.1]
-    },
-    'CatBoost': {
-        'iterations': [100, 200],
-        'depth': [4, 6],
-        'learning_rate': [0.01, 0.1]
-    }
-}
-
-def evaluate_model(model, X_test, y_test, name):
-    y_pred = model.predict(X_test)
-    y_proba = model.predict_proba(X_test)[:, 1]
-
-    print(f"\n=== {name} ===")
-    print(f"Acurácia: {accuracy_score(y_test, y_pred):.4f}")
-    print(f"Precisão: {precision_score(y_test, y_pred):.4f}")
-    print(f"Recall: {recall_score(y_test, y_pred):.4f}")
-    print(f"F1-score: {f1_score(y_test, y_pred):.4f}")
-    print(f"AUC-ROC: {roc_auc_score(y_test, y_proba):.4f}")
-    print(f"MCC: {matthews_corrcoef(y_test, y_pred):.4f}")
-    print("\nRelatório de Classificação:")
-    print(classification_report(y_test, y_pred, target_names=['Não Tóxico', 'Tóxico']))
-
-    cm = confusion_matrix(y_test, y_pred)
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=['Não Tóxico', 'Tóxico'],
-                yticklabels=['Não Tóxico', 'Tóxico'])
-    plt.title(f'Matriz de Confusão - {name}')
-    plt.ylabel('Verdadeiro')
-    plt.xlabel('Predito')
-    plt.show()
-
 results = []
 
-for name, model in models.items():
-    print(f'\n🔍 Otimizando {name}...')
-    search = RandomizedSearchCV(model, param_distributions=param_grid[name],
-                                n_iter=5, cv=3, scoring='f1', random_state=42, n_jobs=-1)
-    search.fit(X_train_bal, y_train_bal)
-    best_model = search.best_estimator_
+for feature in features:
+    print(f"\n🔍 Avaliando feature: {feature}")
+    
+    X = df[[feature]].values
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y)
 
-    y_pred = best_model.predict(X_test)
-    y_proba = best_model.predict_proba(X_test)[:, 1]
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    sm = SMOTE(random_state=42)
+    X_train_bal, y_train_bal = sm.fit_resample(X_train, y_train)
+
+    print("Antes do SMOTE:", np.bincount(y_train))
+    print("Depois do SMOTE:", np.bincount(y_train_bal))
+
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_train_bal, y_train_bal)
+
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, 1]
 
     acc = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred)
@@ -125,8 +45,30 @@ for name, model in models.items():
     auc = roc_auc_score(y_test, y_proba)
     mcc = matthews_corrcoef(y_test, y_pred)
 
+    print(f"\n=== {feature} ===")
+    print(f"Acurácia: {acc:.4f}")
+    print(f"Precisão: {prec:.4f}")
+    print(f"Recall: {rec:.4f}")
+    print(f"F1-score: {f1:.4f}")
+    print(f"AUC-ROC: {auc:.4f}")
+    print(f"MCC: {mcc:.4f}")
+    print("\nRelatório de Classificação:")
+    print(classification_report(y_test, y_pred, target_names=['Não Tóxico', 'Tóxico']))
+
+    cm = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(5,4))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=['Não Tóxico', 'Tóxico'],
+                yticklabels=['Não Tóxico', 'Tóxico'])
+    plt.title(f'Matriz de Confusão - {feature}')
+    plt.xlabel('Predito')
+    plt.ylabel('Verdadeiro')
+    plt.tight_layout()
+    plt.savefig(f'matriz_confusao_{feature}.png')
+    plt.close()
+
     results.append({
-        'Modelo': name,
+        'Feature': feature,
         'Acurácia': acc,
         'Precisão': prec,
         'Recall': rec,
@@ -135,19 +77,31 @@ for name, model in models.items():
         'MCC': mcc
     })
 
-    evaluate_model(best_model, X_test, y_test, name)
-
 df_results = pd.DataFrame(results)
-print("\n=== Comparação resumida dos modelos ===")
-print(df_results.sort_values(by='F1-Score', ascending=False))
+print("\n=== Comparação entre features (usando Random Forest) ===")
+print(df_results)
 
-df_results.set_index('Modelo', inplace=True)
-df_results[['Acurácia', 'Precisão', 'Recall', 'F1-Score', 'AUC-ROC', 'MCC']].plot(
-    kind='bar', figsize=(12,6))
-plt.title('Comparação de métricas dos modelos')
-plt.ylabel('Score')
-plt.ylim(0, 1)
-plt.xticks(rotation=45)
-plt.legend(loc='lower right')
-plt.tight_layout()
-plt.show()
+metrics = ['Acurácia', 'Precisão', 'Recall', 'F1-Score', 'AUC-ROC', 'MCC']
+fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(18, 10))
+axes = axes.flatten()
+
+for i, metric in enumerate(metrics):
+    sns.barplot(
+        x=df_results['Feature'],
+        y=df_results[metric],
+        ax=axes[i],
+        palette='viridis'
+    )
+    axes[i].set_title(metric)
+    axes[i].set_ylim(0, 1)
+    axes[i].set_xlabel('')
+    axes[i].set_ylabel('Score')
+    for p in axes[i].patches:
+        height = p.get_height()
+        axes[i].annotate(f'{height:.2f}', (p.get_x() + p.get_width() / 2, height),
+                         ha='center', va='bottom', fontsize=10)
+
+plt.suptitle('Comparação detalhada de métricas por Feature (Random Forest)', fontsize=16)
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.savefig('grafico_comparacao_features.png')
+plt.close()

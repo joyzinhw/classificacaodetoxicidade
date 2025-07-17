@@ -19,7 +19,7 @@ from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
 
-df = pd.read_csv('dataset_final.csv')
+df = pd.read_csv('dataset.csv')
 
 # Converter SMILES em fingerprints
 def smiles_to_fingerprint(smiles, radius=2, n_bits=1024):
@@ -156,6 +156,15 @@ plt.legend(loc='lower right')
 plt.tight_layout()
 plt.show()
 
+# Criação do DataFrame com os resultados
+df_results = pd.DataFrame(all_results)
+
+# Salvar em arquivo CSV
+df_results.to_csv('resultados_modelos.csv', index=False)
+
+# Exibir resultados no terminal
+print("\n=== Comparação resumida dos modelos ===")
+print(df_results)
 
 # import pandas as pd
 # import numpy as np

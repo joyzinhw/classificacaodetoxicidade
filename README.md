@@ -1,16 +1,9 @@
-# Classificação de Toxicidade para Abelhas
+# ANÁLISE DE ALGORITMOS SUPERVISIONADOS PARA PREVER A TOXICIDADE DE PESTICIDAS EM ABELHAS
 
-## Dataset
+## requisitos
 
-```
-@article{adamczyk2025apistox,
-  title={ApisTox: a new benchmark dataset for the classification of small molecules toxicity on honey bees},
-  author={Adamczyk, Jakub and Poziemski, Jakub and Siedlecki, Pawel},
-  journal={Scientific Data},
-  volume={12},
-  number={1},
-  pages={5},
-  year={2025},
-  publisher={Nature Publishing Group UK London}
-}
-```
+* python (versão 3.13.0 ou posterior)
+* [dataset ](https://archive.ics.uci.edu/dataset/995/apistox)
+* ```
+  pip install -r requirements.txt
+  ```
